@@ -450,4 +450,30 @@ mod tests {
     fn milestone_hash(env: &Env) -> BytesN<32> {
         BytesN::from_array(env, &[0xabu8; 32])
     }
+
+    // -----------------------------------------------------------------------
+    // Tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    #[should_panic(expected = "create_vault: start_timestamp must be strictly less than end_timestamp")]
+    fn create_vault_rejects_start_equal_end() {
+        let (env, client, actors) = setup();
+
+        let amount = 100_000_000;
+        let start_timestamp = 1000;
+        let end_timestamp = 1000; // start == end
+        let milestone_hash = milestone_hash(&env);
+
+        client.create_vault(
+            &actors.creator,
+            &amount,
+            &start_timestamp,
+            &end_timestamp,
+            &milestone_hash,
+            &None,
+            &actors.success_dest,
+            &actors.failure_dest,
+        );
+    }
 }
