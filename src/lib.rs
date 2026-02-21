@@ -300,6 +300,7 @@ impl DisciplrVault {
         Ok(true)
     }
 
+<<<<<<< HEAD
     // -----------------------------------------------------------------------
     // cancel_vault
     // -----------------------------------------------------------------------
@@ -315,6 +316,18 @@ impl DisciplrVault {
 
         vault.creator.require_auth();
 
+=======
+    /// Cancel vault and return funds to creator (if allowed by rules).
+    pub fn cancel_vault(_env: Env, vault_id: u32) -> bool {
+        let env = _env;
+        let vault_key = (Symbol::new(&env, "vault"), vault_id);
+        let vault_opt: Option<ProductivityVault> = env.storage().persistent().get(&vault_key);
+        if vault_opt.is_none() {
+            return false;
+        }
+        let mut vault = vault_opt.unwrap();
+        // Only active vaults can be cancelled
+>>>>>>> f801b9d (feat: implement cancel_vault with creator auth, refund tracking, and comprehensive tests)
         if vault.status != VaultStatus::Active {
             return Err(Error::VaultNotActive);
         }
@@ -438,6 +451,98 @@ mod tests {
                 &self.success_dest,
                 &self.failure_dest,
             )
+        }
+
+        #[test]
+        fn test_refund_balance_tracked() {
+            let env = Env::default();
+            let contract_id = env.register(DisciplrVault, ());
+            let client = DisciplrVaultClient::new(&env, &contract_id);
+            let creator = <Address as TestAddress>::generate(&env);
+            let success = <Address as TestAddress>::generate(&env);
+            let failure = <Address as TestAddress>::generate(&env);
+            let milestone_hash = BytesN::from_array(&env, &[0u8; 32]);
+            let refund_amount = 5000i128;
+
+            // create vault with specific amount
+            let create_args = (
+                creator.clone(),
+                refund_amount,
+                0u64,
+                100u64,
+                milestone_hash.clone(),
+                Option::<Address>::None,
+                success.clone(),
+                failure.clone(),
+            )
+                .into_val(&env);
+            client
+                .mock_auths(&[MockAuth {
+                    address: &creator,
+                    invoke: &MockAuthInvoke {
+                        contract: &contract_id,
+                        fn_name: "create_vault",
+                        args: create_args,
+                        sub_invokes: &[],
+                    },
+                }])
+                .create_vault(
+                    &creator,
+                    &refund_amount,
+                    &0u64,
+                    &100u64,
+                    &milestone_hash,
+                    &Option::<Address>::None,
+                    &success,
+                    &failure,
+                );
+
+            let vault_id: u32 = 0;
+
+            // check balance is tracked before cancel
+            let balance_before = client.get_vault_balance(&vault_id);
+            assert_eq!(balance_before, refund_amount);
+
+            // cancel and verify balance is cleared
+            let cancel_args = (vault_id,).into_val(&env);
+            client
+                .mock_auths(&[MockAuth {
+                    address: &creator,
+                    invoke: &MockAuthInvoke {
+                        contract: &contract_id,
+                        fn_name: "cancel_vault",
+                        args: cancel_args,
+                        sub_invokes: &[],
+                    },
+                }])
+                .cancel_vault(&vault_id);
+
+            let balance_after = client.get_vault_balance(&vault_id);
+            assert_eq!(balance_after, 0i128);
+        }
+
+        #[test]
+        fn test_cancel_nonexistent_vault_fails() {
+            let env = Env::default();
+            let contract_id = env.register(DisciplrVault, ());
+            let client = DisciplrVaultClient::new(&env, &contract_id);
+            let creator = <Address as TestAddress>::generate(&env);
+            let nonexistent_vault_id: u32 = 999;
+
+            // try to cancel vault that doesn't exist (should return false)
+            let cancel_args = (nonexistent_vault_id,).into_val(&env);
+            let res = client
+                .mock_auths(&[MockAuth {
+                    address: &creator,
+                    invoke: &MockAuthInvoke {
+                        contract: &contract_id,
+                        fn_name: "cancel_vault",
+                        args: cancel_args,
+                        sub_invokes: &[],
+                    },
+                }])
+                .cancel_vault(&nonexistent_vault_id);
+            assert!(!res);
         }
     }
 
