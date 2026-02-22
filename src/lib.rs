@@ -361,7 +361,7 @@ mod tests {
         // Try to release funds for a non-existent vault ID
         let result = client.try_release_funds(&999);
         assert!(result.is_err());
-        
+
         // Simply assert that an error occurred - the exact error type is verified by the implementation
     }
 
@@ -374,10 +374,9 @@ mod tests {
         // Try to redirect funds for a non-existent vault ID
         let result = client.try_redirect_funds(&999);
         assert!(result.is_err());
-        
+
         // Simply assert that an error occurred - the exact error type is verified by the implementation
     }
-
 
     /// Test milestone hash generation
     #[test]
@@ -690,7 +689,9 @@ mod tests {
     // -----------------------------------------------------------------------
 
     #[test]
-    #[should_panic(expected = "create_vault: start_timestamp must be strictly less than end_timestamp")]
+    #[should_panic(
+        expected = "create_vault: start_timestamp must be strictly less than end_timestamp"
+    )]
     fn create_vault_rejects_start_equal_end() {
         let (env, client, actors) = setup();
 
@@ -712,7 +713,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "create_vault: start_timestamp must be strictly less than end_timestamp")]
+    #[should_panic(
+        expected = "create_vault: start_timestamp must be strictly less than end_timestamp"
+    )]
     fn create_vault_rejects_start_greater_than_end() {
         let (env, client, actors) = setup();
 
