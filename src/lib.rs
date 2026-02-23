@@ -779,7 +779,6 @@ mod tests_setup {
 mod tests_validation {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Env};
-
     #[test]
     #[should_panic(expected = "amount must be positive")]
     fn test_create_vault_zero_amount() {
