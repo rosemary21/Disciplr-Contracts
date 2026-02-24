@@ -637,6 +637,15 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_milestone_rejects_non_existent_vault() {
+        let setup = TestSetup::new();
+        let client = setup.client();
+
+        let result = client.try_validate_milestone(&999);
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn test_redirect_funds_rejects_non_existent_vault() {
         let setup = TestSetup::new();
         let client = setup.client();
