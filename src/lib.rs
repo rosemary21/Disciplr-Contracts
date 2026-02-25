@@ -92,7 +92,6 @@ pub enum DataKey {
 // ---------------------------------------------------------------------------
 // Contract
 // ---------------------------------------------------------------------------
-
 #[contract]
 pub struct DisciplrVault;
 
@@ -125,6 +124,7 @@ impl DisciplrVault {
             return Err(Error::InvalidAmount);
         }
 
+        // Validate that start_timestamp is strictly before end_timestamp.
         if end_timestamp <= start_timestamp {
             return Err(Error::InvalidTimestamps);
         }
@@ -310,7 +310,6 @@ impl DisciplrVault {
             .ok_or(Error::VaultNotFound)?;
 
         vault.creator.require_auth();
-
         if vault.status != VaultStatus::Active {
             return Err(Error::VaultNotActive);
         }
@@ -325,8 +324,10 @@ impl DisciplrVault {
         vault.status = VaultStatus::Cancelled;
         env.storage().instance().set(&vault_key, &vault);
 
-        env.events()
-            .publish((Symbol::new(&env, "vault_cancelled"), vault_id), ());
+        env.events().publish(
+            (Symbol::new(&env, "vault_cancelled"), vault_id),
+            vault.amount,
+        );
         Ok(true)
     }
 
